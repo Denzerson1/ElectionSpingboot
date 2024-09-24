@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warehouse Data</title>
+</head>
+<body>
+<h1>WarehouseData </h1>
+
+<div>
+    <h3>Filter</h3>
+    <label for="partyFilter">Filter Party Name:</label>
+    <input type="text" id="partyFilter" placeholder="PartyName" value="FPOE">
+
+    <label for="minVotesFilter">Filter Minimum Votes:</label>
+    <input type="number" id="minVotesFilter" placeholder="Minimum" value="1">
+
+    <button onclick="applyFilters()">Anwenden</button>
+</div>
+
+<h3>Party Votes</h3>
+<table border="1">
+    <thead>
+    <tr>
+        <th>Party ID</th>
+        <th>Votes</th>
+    </tr>
+    </thead>
+    <tbody id="partyVotes">
+    <!-- Party votes hier-->
+    </tbody>
+</table>
+
+<h3>Preference Votes</h3>
+<table border="1">
+    <thead>
+    <tr>
+        <th>List Number</th>
+        <th>Person Name</th>
+        <th>Votes</th>
+    </tr>
+    </thead>
+    <tbody id="preferenceVotes">
+    <!-- Preference votes hier -->
+    </tbody>
+</table>
+
+<script>
+    let warehouseData;
+
+    // Fetch warehouse data on page load
+    window.onload = () => {
+        fetchData();
+    };
+
+    function fetchData() {
+        fetch('/election/region123/data')
+            .then(response => response.json())
+            .then(data => {
+                warehouseData = data;
+                renderTables(warehouseData);
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function renderTables(data) {
+        renderPartyVotes(data.countingData);
+        renderPreferenceVotes(data.preferenceVotes);
+    }
+
+    function renderPartyVotes(partyVotes) {
+        const partyVotesTable = document.getElementById('partyVotes');
+        partyVotesTable.innerHTML = ''; // Clear the table
+
+        partyVotes.forEach(vote => {
+            const row = `
+                    <tr>
+                        <td>${vote.partyID}</td>
+                        <td>${vote.amountVotes}</td>
+                    </tr>
+                `;
+            partyVotesTable.innerHTML += row;
+        });
+    }
+
+    // Render preference votes into the table
+    function renderPreferenceVotes(preferenceVotes) {
+        const preferenceVotesTable = document.getElementById('preferenceVotes');
+        preferenceVotesTable.innerHTML = ''; // Clear the table
+
+        preferenceVotes.forEach(vote => {
+            const row = `
+                    <tr>
+                        <td>${vote.listNumber}</td>
+                        <td>${vote.personName}</td>
+                        <td>${vote.voteCount}</td>
+                    </tr>
+                `;
+            preferenceVotesTable.innerHTML += row;
+        });
+    }
+
+    function applyFilters() {
+        const partyFilter = document.getElementById('partyFilter').value.toUpperCase();
+        const minVotesFilter = parseInt(document.getElementById('minVotesFilter').value);
+
+        // Filter party votes
+        const filteredPartyVotes = warehouseData.countingData.filter(vote => {
+            return vote.partyID.includes(partyFilter) && vote.amountVotes >= minVotesFilter;
+        });
+
+        // Filter preference votes (similar logic can be applied here if needed)
+        const filteredPreferenceVotes = warehouseData.preferenceVotes.filter(vote => {
+            return vote.voteCount >= minVotesFilter;
+        });
+
+        // Re-render tables with filtered data
+        renderPartyVotes(filteredPartyVotes);
+        renderPreferenceVotes(filteredPreferenceVotes);
+    }
+</script>
+</body>
+</html>
